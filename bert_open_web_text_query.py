@@ -26,7 +26,7 @@ def load_pipeline(model,tokenizer, task, top_k):
 
 def main():
     unmasker = load_pipeline(task= 'fill-mask', top_k=1, model="bert-base-uncased", tokenizer= "bert-base-uncased")
-    for i in range(1,2):
+    for i in range(1,512):
             input_batch = []
             for d in iter(webtext.take(10000)):
                 encoded = bert_tokenizer.tokenize(d['text'])
