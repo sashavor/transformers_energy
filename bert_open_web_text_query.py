@@ -5,6 +5,9 @@ from pyJoules.energy_meter import measure_energy
 from pyJoules.handler.csv_handler import CSVHandler
 from pyJoules.device.nvidia_device import NvidiaGPUDomain
 
+import subprocess
+
+
 load_csv_handler = CSVHandler('./load_model_energy.csv')
 query_csv_handler = CSVHandler('./query_model_energy.csv')
 
@@ -37,6 +40,9 @@ def main():
 
 
 if __name__ == "__main__":
+    p=subprocess.call("./nvmodelprofile.sh > out", shell=True)
     main()
     load_csv_handler.save_data()
     query_csv_handler.save_data()
+
+
