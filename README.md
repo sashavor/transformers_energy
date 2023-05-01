@@ -1,0 +1,16 @@
+# Transformers Energy (WIP)
+
+
+## References
+
+Hydra
+
+```text
+@Misc{Yadan2019Hydra,
+  author =       {Omry Yadan},
+  title =        {Hydra - A framework for elegantly configuring complex applications},
+  howpublished = {Github},
+  year =         {2019},
+  url =          {https://github.com/facebookresearch/hydra}
+}
+```

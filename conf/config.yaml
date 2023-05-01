@@ -1,0 +1,17 @@
+device: cpu
+
+models:
+- bert-base-uncased
+- roberta-base
+
+datasets:
+- name: openwebtext
+  split: train
+  take: 100  # TODO: 10000
+  sequence_lengths:
+    - 20
+    - 50
+    - 100
+    - 200
+
+# TODO: Add sequence size bucketing

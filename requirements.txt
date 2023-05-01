@@ -1,0 +1,5 @@
+transformers
+hydra-core
+pyJoules
+datasets
+tqdm
