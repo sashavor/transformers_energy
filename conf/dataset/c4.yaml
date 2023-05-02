@@ -1,0 +1,5 @@
+load_args:
+  path: c4
+  subset: en
+  split: train
+text_feature: text

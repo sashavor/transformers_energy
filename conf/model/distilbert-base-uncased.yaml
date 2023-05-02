@@ -1,0 +1,2 @@
+name: distilbert-base-uncased
+max_sequence_length: 512
