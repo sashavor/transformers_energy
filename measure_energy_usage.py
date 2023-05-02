@@ -1,13 +1,30 @@
 import hydra
 from omegaconf import DictConfig
+
+from functools import reduce
+from operator import add
 from pyJoules.energy_meter import measure_energy
+from pyJoules.energy_trace import EnergyTrace
+from pyJoules.handler import EnergyHandler
+
 from transformers import AutoModel, AutoTokenizer
 from datasets import load_dataset
 from tqdm import tqdm
-from transformers import logging
+from transformers import logging as transfomers_logging
+import logging
 
-logging.set_verbosity_error()  # To suppress warnings about model weight loading (see link below)
+
+log = logging.getLogger(__name__)
+transfomers_logging.set_verbosity_error()  # To suppress warnings about model weight loading (see link below)
 # https://discuss.huggingface.co/t/is-some-weights-of-the-model-were-not-used-warning-normal-when-pre-trained-bert-only-by-mlm/5672/2
+
+
+class HydraHandler(EnergyHandler):
+    def process(self, trace: EnergyTrace):
+        for sample in trace:
+            begin_string = f"start timestamp : {sample.timestamp}; tag : {sample.tag}; duration : {sample.duration}"
+            energy_strings = [f"; {domain} : {value}" for domain, value in sample.energy.items()]
+            log.info(f"-- ENERGY READING -- {reduce(add, energy_strings, begin_string)}")
 
 
 def prepare_data_items(item, tokenizer, sequence_length):
@@ -39,7 +56,7 @@ def setup_and_run_inference(
     progress_bar = tqdm(total=dataset.take)
     ds_iter = iter(ds.take(dataset.take))
 
-    @measure_energy()
+    @measure_energy(handler=HydraHandler())
     def run_inference(x):
         return model(**x)  # We don't actually care about the result.
 

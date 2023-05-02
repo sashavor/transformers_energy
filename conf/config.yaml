@@ -21,4 +21,4 @@ hydra:
       model: glob(*)
       dataset: glob(*)
       sequence_length: range(0,${model.max_sequence_length},step=${sequence_length_step_size})
-      dataset.take: 10000
+      dataset.take: 10  # Note, should be 10000
