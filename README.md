@@ -1,5 +1,13 @@
 # Transformers Energy (WIP)
 
+## Setup
+
+Install all requirements (within a virtualenv or Conda env) with:
+
+```shell
+pip install -r requirements.txt --upgrade
+```
+
 ## Run development setup
 
 ```shell
