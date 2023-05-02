@@ -16,6 +16,10 @@ sequence_length: 40
 sequence_length_step_size: 100  # For experiment sweep
 
 hydra:
+  job_logging:
+    formatters:
+      simple:
+        format: '%(message)s'
   sweeper:
     params:
       model: glob(*)

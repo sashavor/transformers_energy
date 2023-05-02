@@ -1,8 +1,6 @@
 import hydra
 from omegaconf import DictConfig
 
-from functools import reduce
-from operator import add
 from pyJoules.energy_meter import measure_energy
 from pyJoules.energy_trace import EnergyTrace
 from pyJoules.handler import EnergyHandler
@@ -20,11 +18,18 @@ transfomers_logging.set_verbosity_error()  # To suppress warnings about model we
 
 
 class HydraHandler(EnergyHandler):
+    headers_printed = False
+
     def process(self, trace: EnergyTrace):
+        if not self.headers_printed:
+            domain_names = trace[0].energy.keys()
+            log.info('timestamp;tag;duration;' + ';'.join(domain_names))
+            self.headers_printed = True
+
         for sample in trace:
-            begin_string = f"start timestamp : {sample.timestamp}; tag : {sample.tag}; duration : {sample.duration}"
-            energy_strings = [f"; {domain} : {value}" for domain, value in sample.energy.items()]
-            log.info(f"-- ENERGY READING -- {reduce(add, energy_strings, begin_string)}")
+            line_beginning = f'{sample.timestamp};{sample.tag};{sample.duration};'
+            energy_values = [str(sample.energy[domain]) for domain in sample.energy.keys()]
+            log.info(line_beginning + ';'.join(energy_values))
 
 
 def prepare_data_items(item, tokenizer, sequence_length):
