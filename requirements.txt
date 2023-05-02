@@ -1,4 +1,5 @@
 transformers
+huggingface_hub
 hydra-core
 pyJoules
 datasets
