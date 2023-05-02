@@ -1,3 +1,4 @@
-name: openwebtext
-split: train
+load_args:
+  path: openwebtext
+  split: train
 text_feature: text

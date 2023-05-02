@@ -50,7 +50,7 @@ def setup_and_run_inference(
         device
 ):
 
-    ds = load_dataset(dataset.name, split=dataset.split, streaming=True).map(
+    ds = load_dataset(**dataset.load_args, streaming=True).map(
         lambda x: prepare_data_items(
             x[dataset.text_feature],
             tokenizer,

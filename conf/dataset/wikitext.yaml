@@ -1,4 +1,5 @@
-name: wikitext
-config: wikitext-103-raw-v1
-split: test
+load_args:
+  path: wikitext
+  name: wikitext-103-raw-v1
+  split: test
 text_feature: text
