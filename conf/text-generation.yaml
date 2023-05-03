@@ -1,0 +1,29 @@
+device: cpu
+
+defaults:
+  - dataset: openwebtext
+  - model: text-generation-gpt2
+  - strategy: greedy
+  - _self_
+
+dataset:
+  take: 100
+sequence_length: 40
+max_new_tokens: 10
+
+sequence_length_step_size: 100  # For experiment sweep
+
+hydra:
+  job_logging:
+    formatters:
+      simple:
+        format: '%(message)s'
+  sweeper:
+    max_batch_size: 10
+    params:
+      model: glob(text-generation-*)
+      dataset: glob(*)
+      sequence_length: range(0,${model.max_sequence_length},step=${sequence_length_step_size})
+      dataset.take: 10  # Note, should be 10000
+      strategy: glob(*)
+      max_new_tokens: range(1, 20)  # How many options do we want with this?

@@ -6,7 +6,7 @@ from pyJoules.energy_trace import EnergyTrace
 from pyJoules.handler import EnergyHandler
 
 from transformers import logging as transfomers_logging
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModelForMaskedLM, AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 from huggingface_hub import HfApi
 from tqdm import tqdm
@@ -23,15 +23,18 @@ class HydraHandler(EnergyHandler):
     headers_printed = False
 
     def process(self, trace: EnergyTrace):
+        def log_pyjoules(*args, **kwargs):
+            log.info("[PYJOULES] ", *args, **kwargs)
+
         if not self.headers_printed:
             domain_names = trace[0].energy.keys()
-            log.info('timestamp;tag;duration;' + ';'.join(domain_names))
+            log_pyjoules('timestamp;tag;duration;' + ';'.join(domain_names))
             self.headers_printed = True
 
         for sample in trace:
             line_beginning = f'{sample.timestamp};{sample.tag};{sample.duration};'
             energy_values = [str(sample.energy[domain]) for domain in sample.energy.keys()]
-            log.info(line_beginning + ';'.join(energy_values))
+            log_pyjoules(line_beginning + ';'.join(energy_values))
 
 
 def setup_and_run_inference(
@@ -40,6 +43,8 @@ def setup_and_run_inference(
         task_type,
         dataset,
         sequence_length,
+        strategy,
+        max_new_tokens,
         device
 ):
     def prepare_data_items(item):
@@ -64,12 +69,20 @@ def setup_and_run_inference(
             "input_tensor": tokenizer(item["input_string"], return_tensors="pt").to(device)
         }
 
+    def run_fill_mask_inference(x):
+        return model(**x)
+
+    def run_text_generation_inference(x):
+        return model.generate(**x, **strategy, max_new_tokens=max_new_tokens)
+
     ds = load_dataset(**dataset.load_args, streaming=True).map(prepare_data_items)
 
     if task_type == "fill-mask":
         ds = ds.map(fill_mask_preprocess)
-    if task_type == "text-generation":
+        inference_fn = run_fill_mask_inference
+    elif task_type == "text-generation":
         ds = ds.map(text_generation_preprocess)
+        inference_fn = run_text_generation_inference
     else:
         raise NotImplementedError(f"Task type \"{task_type}\" is not supported.")
 
@@ -77,19 +90,26 @@ def setup_and_run_inference(
     ds_iter = iter(ds.take(dataset.take))
 
     @measure_energy(handler=HydraHandler())
-    def run_inference(x):
-        return model(**x)  # We don't actually care about the result.
+    def inference_with_energy(*args, **kwargs):
+        inference_fn(*args, **kwargs)
 
     for d in ds_iter:
-        run_inference(d["input_tensor"])
+        inference_with_energy(d["input_tensor"])
         progress_bar.update(1)
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="conf")
 def run_experiments(cfg: DictConfig) -> None:
+    task_type = api.model_info(cfg.model.name).pipeline_tag
+
+    if task_type == "fill-mask":
+        model = AutoModelForMaskedLM.from_pretrained(cfg.model.name).to(cfg.device)
+    elif task_type == "text-generation":
+        model = AutoModelForCausalLM.from_pretrained(cfg.model.name).to(cfg.device)
+    else:
+        raise ValueError(f"Task type {task_type} is not supported.")
+
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.name)
-    model = AutoModel.from_pretrained(cfg.model.name).to(cfg.device)
-    task_type =api.model_info(cfg.model.name).pipeline_tag
 
     setup_and_run_inference(
         model=model,
@@ -97,7 +117,9 @@ def run_experiments(cfg: DictConfig) -> None:
         task_type=task_type,
         dataset=cfg.dataset,
         sequence_length=cfg.sequence_length,
-        device=cfg.device
+        strategy=cfg.get("strategy", None),
+        max_new_tokens=cfg.get("max_new_tokens", None),
+        device=cfg.device,
     )
 
 

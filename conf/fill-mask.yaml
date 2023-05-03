@@ -1,17 +1,13 @@
 device: cpu
 
-# BEGIN Local development
-
 defaults:
-  - model: bert-base-uncased
   - dataset: openwebtext
+  - model: fill-mask-bert-base-uncased
   - _self_
 
 dataset:
   take: 100
-sequence_length: 40
-
-# END Local development
+sequence_length: 20
 
 sequence_length_step_size: 100  # For experiment sweep
 
@@ -21,8 +17,9 @@ hydra:
       simple:
         format: '%(message)s'
   sweeper:
+    max_batch_size: 10
     params:
-      model: glob(*)
+      model: glob(fill-mask-*)
       dataset: glob(*)
       sequence_length: range(0,${model.max_sequence_length},step=${sequence_length_step_size})
       dataset.take: 10  # Note, should be 10000
