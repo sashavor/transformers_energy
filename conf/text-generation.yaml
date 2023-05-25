@@ -27,3 +27,5 @@ hydra:
       dataset.take: 10  # Note, should be 10000
       strategy: glob(*)
       max_new_tokens: range(1, 20)  # How many options do we want with this?
+  job:
+      chdir: True
