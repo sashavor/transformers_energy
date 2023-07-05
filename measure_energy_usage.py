@@ -1,5 +1,6 @@
 import hydra
 from omegaconf import DictConfig
+import subprocess, os
 
 from pyJoules.energy_meter import measure_energy
 from pyJoules.energy_trace import EnergyTrace
@@ -24,7 +25,8 @@ class HydraHandler(EnergyHandler):
 
     def process(self, trace: EnergyTrace):
         def log_pyjoules(*args, **kwargs):
-            log.info("[PYJOULES] ", *args, **kwargs)
+            #log.info("[PYJOULES] ")
+            log.info(*args, **kwargs)
 
         if not self.headers_printed:
             domain_names = trace[0].energy.keys()
@@ -100,6 +102,8 @@ def setup_and_run_inference(
 
 @hydra.main(version_base=None, config_path="conf")
 def run_experiments(cfg: DictConfig) -> None:
+    p=subprocess.Popen("/home/sasha/Documents/HuggingFace/transformers_energy/nvmodelprofile.sh", shell=True)
+    print("Working directory : {}".format(os.getcwd()))
     task_type = api.model_info(cfg.model.name).pipeline_tag
 
     if task_type == "fill-mask":
@@ -121,7 +125,7 @@ def run_experiments(cfg: DictConfig) -> None:
         max_new_tokens=cfg.get("max_new_tokens", None),
         device=cfg.device,
     )
-
+    p.kill()
 
 if __name__ == "__main__":
     run_experiments()
